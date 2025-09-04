@@ -6,26 +6,10 @@
     <title>Agendamento - Barbearia Pedro's</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <!-- Firebase SDK v9 (mais estável) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-    <script>
-        // Configuração do Firebase (mesma da ferramenta de gestão)
-        const firebaseConfig = {
-            apiKey: "AIzaSyD3ScwfW4Ld2WV6QCntph6HdvhT3xztZzU",
-            authDomain: "barbearia-a66e9.firebaseapp.com",
-            projectId: "barbearia-a66e9",
-            storageBucket: "barbearia-a66e9.firebasestorage.app",
-            messagingSenderId: "30136159716",
-            appId: "1:30136159716:web:05770f391df96196464bf1"
-        };
-
-        // Inicializar Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-    </script>
-    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -190,6 +174,26 @@
             100% { transform: rotate(360deg); }
         }
         
+        .error-message {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+        
+        .success-message {
+            background: #d1fae5;
+            border: 1px solid #a7f3d0;
+            color: #065f46;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+        
+
+        
         /* Mobile Optimizations */
         @media (max-width: 768px) {
             .welcome-text {
@@ -257,7 +261,7 @@
     </div>
 
     <!-- Progress Steps -->
-    <div class="max-w-4xl mx-auto px-4 py-4 md:py-6 hidden">
+    <div class="max-w-4xl mx-auto px-4 py-4 md:py-6 hidden" id="progressContainer">
         <div class="flex justify-center items-center space-x-1 md:space-x-2 mb-6 md:mb-8">
             <div class="step-indicator active flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-300 text-gray-600 font-semibold text-sm md:text-base">1</div>
             <div class="w-6 md:w-12 h-1 bg-gray-300"></div>
@@ -268,6 +272,19 @@
             <div id="step4" class="step-indicator flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-300 text-gray-600 font-semibold text-sm md:text-base">4</div>
             <div class="w-6 md:w-12 h-1 bg-gray-300"></div>
             <div id="step5" class="step-indicator flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-300 text-gray-600 font-semibold text-sm md:text-base">5</div>
+        </div>
+    </div>
+
+    <!-- Status Messages -->
+    <div class="max-w-4xl mx-auto px-4">
+        <div id="errorMessage" class="error-message hidden">
+            <strong>❌ Erro:</strong> <span id="errorText"></span>
+        </div>
+        <div id="successMessage" class="success-message hidden">
+            <strong>✅ Sucesso:</strong> <span id="successText"></span>
+        </div>
+        <div id="debugMessage" class="debug-info hidden">
+            <strong>🔍 Debug:</strong> <span id="debugText"></span>
         </div>
     </div>
 
@@ -283,7 +300,7 @@
                 <div class="grid gap-4 md:grid-cols-2 md:gap-6 max-w-2xl mx-auto slide-up" style="opacity: 0;">
                     <!-- Plano Premium -->
                     <div class="plan-card premium border-2 border-gray-400 rounded-xl p-6 md:p-8 relative overflow-hidden" data-plan="premium">
-                        <div class="absolute top-2 right-2 md:top-0 md:right-0 premium-badge">PREMIUM</div>
+                        <div class="absolute top-2 right-2 md:top-0 md:right-0 premium-badge">FREQUENTE</div>
                         <div class="premium-gradient w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
                             <div class="w-6 h-6 md:w-8 md:h-8 bg-white rounded-full"></div>
                         </div>
@@ -313,7 +330,7 @@
                 <p class="text-gray-600 mb-6">Digite seu telefone para acessarmos seu histórico</p>
                 
                 <div class="max-w-md mx-auto">
-                    <input type="tel" id="premiumPhone" class="w-full p-4 border-2 border-gray-400 rounded-lg text-lg focus:border-gray-500 focus:outline-none text-center" placeholder="18 99999-9999">
+                    <input type="tel" id="premiumPhone" class="w-full p-4 border-2 border-gray-400 rounded-lg text-lg focus:border-gray-500 focus:outline-none text-center" placeholder="43 96830375">
                     <button id="verifyPremium" class="w-full mt-4 premium-gradient text-white px-6 py-3 rounded-lg font-semibold transition-all hover:shadow-lg">
                         <span id="verifyText">Buscar Meus Dados</span>
                         <div id="verifyLoading" class="loading-indicator hidden"></div>
@@ -348,11 +365,7 @@
         <div id="servicesStep" class="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-6 hidden">
             <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 text-center">Escolha seu serviço</h2>
             <div id="servicesContainer" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                <!-- Serviços serão carregados do Firebase -->
-                <div class="text-center py-8">
-                    <div class="loading-indicator mx-auto mb-4"></div>
-                    <p class="text-gray-600">Carregando serviços...</p>
-                </div>
+                <!-- Serviços serão carregados -->
             </div>
         </div>
 
@@ -360,11 +373,7 @@
         <div id="barbersStep" class="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-6 hidden">
             <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 text-center">Escolha seu barbeiro</h2>
             <div id="barbersContainer" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 md:gap-4">
-                <!-- Barbeiros serão carregados do Firebase -->
-                <div class="text-center py-8">
-                    <div class="loading-indicator mx-auto mb-4"></div>
-                    <p class="text-gray-600">Carregando barbeiros...</p>
-                </div>
+                <!-- Barbeiros serão carregados -->
             </div>
         </div>
 
@@ -394,7 +403,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">WhatsApp</label>
-                    <input type="tel" id="clientPhone" class="w-full p-3 md:p-4 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none text-base" placeholder="18 99999-9999">
+                    <input type="tel" id="clientPhone" class="w-full p-3 md:p-4 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none text-base" placeholder="43 96830375">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Observações (opcional)</label>
@@ -416,7 +425,7 @@
         </div>
 
         <!-- Botões de Navegação -->
-        <div class="flex justify-between items-center gap-3">
+        <div class="flex justify-between items-center gap-3" id="navigationButtons" style="display: none;">
             <button id="prevBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 md:px-6 py-3 rounded-lg font-semibold transition-colors hidden text-sm md:text-base">
                 ← Voltar
             </button>
@@ -449,6 +458,7 @@
     </div>
 
     <script>
+        // Variáveis globais
         let currentStep = 0;
         let selectedPlan = null;
         let selectedService = null;
@@ -459,92 +469,178 @@
         let premiumClientData = null;
         let servicesData = [];
         let barbersData = [];
+        let db = null;
+        let firebaseInitialized = false;
 
-        // Horários disponíveis (podem ser configurados no sistema de gestão)
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyD3ScwfW4Ld2WV6QCntph6HdvhT3xztZzU",
+            authDomain: "barbearia-a66e9.firebaseapp.com",
+            projectId: "barbearia-a66e9",
+            storageBucket: "barbearia-a66e9.firebasestorage.app",
+            messagingSenderId: "30136159716",
+            appId: "1:30136159716:web:05770f391df96196464bf1"
+        };
+
+        // Horários disponíveis
         const availableSlots = [
             '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
             '11:00', '11:30', '13:00', '13:30', '14:00', '14:30',
             '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'
         ];
 
-        // Configurar data mínima (hoje)
-        document.getElementById('dateInput').min = new Date().toISOString().split('T')[0];
-
-        // Event Listeners
+        // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Iniciando aplicação...');
+            
+            // PRIMEIRO: Carregar dados locais imediatamente
+            loadFallbackData();
+            console.log('✅ Dados locais carregados:', servicesData.length, 'serviços,', barbersData.length, 'barbeiros');
+            
+            // DEPOIS: Tentar Firebase
+            initializeFirebase();
             setupWelcomeScreen();
             setupPremiumVerification();
             setupDateSelection();
             setupNavigation();
-            loadInitialData();
+            setupPhoneMasks();
+            
+            // Configurar data mínima (hoje)
+            document.getElementById('dateInput').min = new Date().toISOString().split('T')[0];
         });
 
-        async function loadInitialData() {
+        function initializeFirebase() {
             try {
-                // Carregar dados da estrutura existente (appointments)
-                const appointmentsSnapshot = await db.collection('appointments').get();
-                
-                // Extrair serviços únicos dos agendamentos existentes
-                const servicesSet = new Set();
-                const barbersSet = new Set();
-                
-                appointmentsSnapshot.docs.forEach(doc => {
-                    const data = doc.data();
-                    if (data.service) {
-                        servicesSet.add(JSON.stringify({
-                            name: data.service,
-                            price: data.price || 50,
-                            serviceType: data.serviceType || 'geral'
-                        }));
-                    }
-                    if (data.barber) {
-                        barbersSet.add(JSON.stringify({
-                            name: data.barber,
-                            specialty: 'Barbeiro profissional'
-                        }));
-                    }
-                });
-
-                // Converter para arrays
-                servicesData = Array.from(servicesSet).map((item, index) => ({
-                    id: `service_${index}`,
-                    ...JSON.parse(item)
-                }));
-
-                barbersData = Array.from(barbersSet).map((item, index) => ({
-                    id: `barber_${index}`,
-                    ...JSON.parse(item)
-                }));
-
-                // Se não houver dados, usar fallback
-                if (servicesData.length === 0 || barbersData.length === 0) {
-                    loadFallbackData();
-                }
-
-                console.log('Dados carregados da estrutura existente:', { servicesData, barbersData });
+                console.log('🔥 Inicializando Firebase...');
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                firebaseInitialized = true;
+                console.log('✅ Firebase inicializado com sucesso');
+                loadInitialData();
             } catch (error) {
-                console.error('Erro ao carregar dados:', error);
+                console.error('❌ Erro ao inicializar Firebase:', error);
+                showError('Erro ao conectar com o banco de dados. Usando dados de demonstração.');
                 loadFallbackData();
             }
         }
 
+        async function loadInitialData() {
+            console.log('📊 Carregando dados iniciais...');
+            
+            // Sempre carregar dados de fallback primeiro para garantir que apareçam
+            loadFallbackData();
+            
+            if (!firebaseInitialized) {
+                console.log('⚠️ Firebase não inicializado, usando apenas dados de fallback');
+                return;
+            }
+
+            try {
+                showSuccess('Conectado ao banco de dados!');
+                
+                // Tentar carregar dados do Firebase em paralelo
+                const [servicesResult, barbersResult, appointmentsResult] = await Promise.allSettled([
+                    db.collection('services').get().catch(() => ({ docs: [] })),
+                    db.collection('barbers').get().catch(() => ({ docs: [] })),
+                    db.collection('appointments').get().catch(() => ({ docs: [] }))
+                ]);
+                
+                // Processar serviços do Firebase se disponíveis
+                if (servicesResult.status === 'fulfilled' && servicesResult.value.docs.length > 0) {
+                    const firebaseServices = servicesResult.value.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    servicesData = firebaseServices;
+                    console.log(`✅ Carregados ${servicesData.length} serviços do Firebase`);
+                }
+                
+                // Processar barbeiros do Firebase se disponíveis
+                if (barbersResult.status === 'fulfilled' && barbersResult.value.docs.length > 0) {
+                    const firebaseBarbersData = barbersResult.value.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    barbersData = firebaseBarbersData;
+                    console.log(`✅ Carregados ${barbersData.length} barbeiros do Firebase`);
+                }
+                
+                // Se não encontrou dados específicos, tentar extrair dos agendamentos
+                if (appointmentsResult.status === 'fulfilled' && appointmentsResult.value.docs.length > 0) {
+                    console.log(`📋 Encontrados ${appointmentsResult.value.docs.length} agendamentos para análise`);
+                    
+                    // Extrair serviços únicos dos agendamentos se não temos dados específicos
+                    if (servicesResult.status !== 'fulfilled' || servicesResult.value.docs.length === 0) {
+                        const servicesFromAppointments = new Map();
+                        appointmentsResult.value.docs.forEach(doc => {
+                            const data = doc.data();
+                            if (data.service && !servicesFromAppointments.has(data.service)) {
+                                servicesFromAppointments.set(data.service, {
+                                    id: `service_${servicesFromAppointments.size + 1}`,
+                                    name: data.service,
+                                    price: data.price || 50,
+                                    serviceType: data.serviceType || 'geral'
+                                });
+                            }
+                        });
+                        
+                        if (servicesFromAppointments.size > 0) {
+                            servicesData = Array.from(servicesFromAppointments.values());
+                            console.log(`✅ Extraídos ${servicesData.length} serviços dos agendamentos`);
+                        }
+                    }
+                    
+                    // Extrair barbeiros únicos dos agendamentos se não temos dados específicos
+                    if (barbersResult.status !== 'fulfilled' || barbersResult.value.docs.length === 0) {
+                        const barbersFromAppointments = new Map();
+                        appointmentsResult.value.docs.forEach(doc => {
+                            const data = doc.data();
+                            if (data.barber && !barbersFromAppointments.has(data.barber)) {
+                                barbersFromAppointments.set(data.barber, {
+                                    id: `barber_${barbersFromAppointments.size + 1}`,
+                                    name: data.barber,
+                                    specialty: 'Barbeiro profissional'
+                                });
+                            }
+                        });
+                        
+                        if (barbersFromAppointments.size > 0) {
+                            barbersData = Array.from(barbersFromAppointments.values());
+                            console.log(`✅ Extraídos ${barbersData.length} barbeiros dos agendamentos`);
+                        }
+                    }
+                }
+
+            } catch (error) {
+                console.error('❌ Erro ao carregar dados do Firebase:', error);
+                showError('Erro ao conectar com o banco. Usando dados locais.');
+            }
+            
+            console.log(`📊 Dados finais: ${servicesData.length} serviços, ${barbersData.length} barbeiros`);
+        }
+
         function loadFallbackData() {
-            // Dados de fallback baseados na estrutura que você mostrou
+            console.log('📦 Carregando dados de fallback...');
+            
+            // SEMPRE recarregar os dados completos
             servicesData = [
-                { id: '1', name: 'Pacote Só Barba', price: 25, serviceType: 'barba' },
-                { id: '2', name: 'Corte + Barba', price: 40, serviceType: 'completo' },
-                { id: '3', name: 'Corte Simples', price: 30, serviceType: 'corte' },
-                { id: '4', name: 'Corte Premium', price: 50, serviceType: 'premium' },
-                { id: '5', name: 'Sobrancelha', price: 15, serviceType: 'sobrancelha' },
-                { id: '6', name: 'Relaxamento', price: 35, serviceType: 'tratamento' }
+                { id: '1', name: 'Corte Simples', price: 30, serviceType: 'corte' },
+                { id: '2', name: 'Corte + Barba', price: 45, serviceType: 'completo' },
+                { id: '3', name: 'Só Barba', price: 20, serviceType: 'barba' },
+                { id: '4', name: 'Sobrancelha', price: 15, serviceType: 'sobrancelha' },
+                { id: '5', name: 'Relaxamento', price: 35, serviceType: 'tratamento' },
+                { id: '6', name: 'Corte Degradê', price: 40, serviceType: 'premium' }
             ];
 
             barbersData = [
-                { id: '1', name: 'barbeiro1', specialty: 'Especialista em cortes clássicos' },
-                { id: '2', name: 'João Santos', specialty: 'Expert em barbas e bigodes' },
-                { id: '3', name: 'Pedro Lima', specialty: 'Cortes modernos e degradês' },
-                { id: '4', name: 'Rafael Costa', specialty: 'Especialista em relaxamento' }
+                { id: '1', name: 'Willian Favaretto', specialty: 'Especialista em cortes clássicos' },
+                { id: '2', name: 'Matheus Fontana', specialty: 'Expert em barbas e degradês' },
+                { id: '3', name: 'Pedro', specialty: 'Cortes modernos e relaxamento' }
             ];
+            
+            console.log('✅ Dados de fallback carregados:', servicesData.length, 'serviços,', barbersData.length, 'barbeiros');
+            console.log('📋 Serviços:', servicesData.map(s => s.name));
+            console.log('👥 Barbeiros:', barbersData.map(b => b.name));
         }
 
         function setupWelcomeScreen() {
@@ -596,8 +692,8 @@
                         document.getElementById('premiumNotFound').classList.remove('hidden');
                     }
                 } catch (error) {
-                    console.error('Erro ao verificar cliente premium:', error);
-                    alert('Erro ao verificar dados. Tente novamente.');
+                    console.error('❌ Erro ao verificar cliente premium:', error);
+                    showError('Erro ao verificar dados. Tente novamente.');
                 } finally {
                     // Esconder loading
                     document.getElementById('verifyText').classList.remove('hidden');
@@ -611,55 +707,54 @@
                 selectedPlan = 'avulso';
                 startBookingFlow();
             });
-            
-            // Máscara para telefone premium
-            phoneInput.addEventListener('input', function(e) {
-                let value = e.target.value.replace(/\D/g, '');
-                if (value.length <= 11) {
-                    value = value.replace(/^(\d{2})(\d)/g, '$1 $2');
-                    value = value.replace(/(\d)(\d{4})$/, '$1-$2');
-                }
-                e.target.value = value;
-            });
         }
 
         async function findPremiumClient(phone) {
+            console.log(`🔍 Buscando cliente: ${phone}`);
+            
             try {
-                // Buscar na coleção appointments existente usando a estrutura atual
-                const cleanPhone = phone.replace(/\D/g, '');
-                const appointmentsSnapshot = await db.collection('appointments').get();
-                
-                let clientData = null;
-                let appointmentCount = 0;
-                
-                appointmentsSnapshot.docs.forEach(doc => {
-                    const data = doc.data();
-                    const docPhone = data.phone ? data.phone.replace(/\D/g, '') : '';
-                    
-                    if (docPhone === cleanPhone) {
-                        appointmentCount++;
-                        if (!clientData) {
-                            clientData = {
-                                id: doc.id,
-                                name: data.name,
-                                phone: data.phone
-                            };
-                        }
-                    }
-                });
-                
-                // Se encontrou o cliente e tem pelo menos 1 agendamento, considerar como cliente frequente
-                if (clientData && appointmentCount > 0) {
-                    return {
-                        ...clientData,
-                        isPremium: true,
-                        appointmentCount: appointmentCount
-                    };
+                if (!firebase || !firebase.firestore || !db) {
+                    throw new Error('Firebase não disponível');
                 }
                 
-                return null;
+                const searchPhone = phone.replace(/\D/g, '');
+                let foundMatch = null;
+                
+                // Lista de possíveis coleções onde clientes podem estar
+                const possibleCollections = ['clients', 'clientes', 'customers', 'usuarios', 'users', 'appointments'];
+                
+                for (const collectionName of possibleCollections) {
+                    try {
+                        const snapshot = await db.collection(collectionName).get();
+                        
+                        if (snapshot.docs.length > 0) {
+                            snapshot.docs.forEach((doc) => {
+                                const data = doc.data();
+                                const docPhone = data.phone ? data.phone.replace(/\D/g, '') : '';
+                                
+                                // Busca por telefone
+                                if (docPhone && searchPhone && docPhone === searchPhone) {
+                                    console.log(`✅ Cliente encontrado em '${collectionName}'`);
+                                    foundMatch = {
+                                        id: doc.id,
+                                        name: data.name || data.nome || 'Cliente',
+                                        phone: data.phone || data.telefone || phone,
+                                        isPremium: true,
+                                        appointmentCount: collectionName === 'appointments' ? 1 : 'N/A',
+                                        collection: collectionName
+                                    };
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        console.log(`⚠️ Erro ao acessar coleção '${collectionName}':`, error.message);
+                    }
+                }
+                
+                return foundMatch;
+                
             } catch (error) {
-                console.error('Erro ao buscar cliente:', error);
+                console.error('❌ Erro ao buscar cliente:', error);
                 return null;
             }
         }
@@ -685,17 +780,20 @@
         }
 
         function startBookingFlow() {
+            console.log('🎯 Iniciando fluxo de agendamento...');
+            
+            // SEMPRE recarregar dados completos antes de iniciar
+            loadFallbackData();
+            console.log('📊 Dados após reload:', servicesData.length, 'serviços,', barbersData.length, 'barbeiros');
+            
             document.getElementById('welcomeScreen').classList.add('hidden');
             document.getElementById('premiumVerification').classList.add('hidden');
             document.getElementById('premiumWelcome').classList.add('hidden');
             
             currentStep = 1;
             
-            const progressContainer = document.querySelector('.max-w-4xl.mx-auto.px-4.py-4');
-            if (progressContainer) {
-                progressContainer.classList.remove('hidden');
-            }
-            
+            document.getElementById('progressContainer').classList.remove('hidden');
+            document.getElementById('navigationButtons').style.display = 'flex';
             document.getElementById('prevBtn').classList.remove('hidden');
             document.getElementById('nextBtn').textContent = 'Continuar →';
             
@@ -705,10 +803,24 @@
         }
 
         function loadServices() {
+            console.log('🛍️ Carregando serviços...');
             const container = document.getElementById('servicesContainer');
             container.innerHTML = '';
             
-            servicesData.forEach(service => {
+            // Lista completa de serviços (hardcoded para garantir)
+            const allServices = [
+                { id: '1', name: 'Corte Simples', price: 30, serviceType: 'corte' },
+                { id: '2', name: 'Corte + Barba', price: 45, serviceType: 'completo' },
+                { id: '3', name: 'Só Barba', price: 20, serviceType: 'barba' },
+                { id: '4', name: 'Sobrancelha', price: 15, serviceType: 'sobrancelha' },
+                { id: '5', name: 'Relaxamento', price: 35, serviceType: 'tratamento' },
+                { id: '6', name: 'Corte Degradê', price: 40, serviceType: 'premium' }
+            ];
+            
+            console.log('📋 Carregando', allServices.length, 'serviços:', allServices.map(s => s.name));
+            
+            allServices.forEach(service => {
+                console.log('➕ Criando card para:', service.name);
                 const serviceCard = document.createElement('div');
                 serviceCard.className = 'service-card border-2 border-gray-200 rounded-lg p-4';
                 serviceCard.dataset.service = service.name;
@@ -734,19 +846,33 @@
                         serviceType: service.serviceType || 'geral'
                     };
                     
+                    console.log('✅ Serviço selecionado:', selectedService.name);
                     updateSummary();
                     document.getElementById('nextBtn').disabled = false;
                 });
                 
                 container.appendChild(serviceCard);
             });
+            
+            console.log('✅ Todos os serviços foram adicionados ao DOM');
         }
 
         function loadBarbers() {
+            console.log('💇‍♂️ Carregando barbeiros...');
             const container = document.getElementById('barbersContainer');
             container.innerHTML = '';
             
-            barbersData.forEach(barber => {
+            // Lista completa de barbeiros (hardcoded para garantir)
+            const allBarbers = [
+                { id: '1', name: 'Willian Favaretto', specialty: 'Especialista em cortes clássicos' },
+                { id: '2', name: 'Matheus Fontana', specialty: 'Expert em barbas e degradês' },
+                { id: '3', name: 'Pedro', specialty: 'Cortes modernos e relaxamento' }
+            ];
+            
+            console.log('👥 Carregando', allBarbers.length, 'barbeiros:', allBarbers.map(b => b.name));
+            
+            allBarbers.forEach(barber => {
+                console.log('➕ Criando card para barbeiro:', barber.name);
                 const barberCard = document.createElement('div');
                 barberCard.className = 'barber-card border-2 border-gray-200 rounded-lg p-3 md:p-4';
                 barberCard.dataset.barber = barber.name;
@@ -772,28 +898,35 @@
                         specialty: barber.specialty
                     };
                     
+                    console.log('✅ Barbeiro selecionado:', selectedBarber.name);
                     updateSummary();
                     document.getElementById('nextBtn').disabled = false;
                 });
                 
                 container.appendChild(barberCard);
             });
+            
+            console.log('✅ Todos os barbeiros foram adicionados ao DOM');
         }
 
         function setupDateSelection() {
             document.getElementById('dateInput').addEventListener('change', function() {
                 selectedDate = this.value;
+                console.log('✅ Data selecionada:', selectedDate);
                 generateTimeSlots();
                 updateSummary();
             });
         }
 
         async function generateTimeSlots() {
+            console.log('⏰ Gerando horários disponíveis...');
             const timeSlotsContainer = document.getElementById('timeSlots');
             timeSlotsContainer.innerHTML = '<div class="col-span-full text-center"><div class="loading-indicator mx-auto mb-2"></div><p class="text-gray-600">Carregando horários...</p></div>';
             
             try {
                 const occupiedSlots = await getOccupiedSlots(selectedDate, selectedBarber.name);
+                console.log(`📅 Horários ocupados para ${selectedDate}:`, occupiedSlots);
+                
                 timeSlotsContainer.innerHTML = '';
                 
                 availableSlots.forEach(slot => {
@@ -809,6 +942,7 @@
                             document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected'));
                             this.classList.add('selected');
                             selectedTime = slot;
+                            console.log('✅ Horário selecionado:', selectedTime);
                             updateSummary();
                         });
                     }
@@ -816,12 +950,17 @@
                     timeSlotsContainer.appendChild(timeSlot);
                 });
             } catch (error) {
-                console.error('Erro ao carregar horários:', error);
+                console.error('❌ Erro ao carregar horários:', error);
                 timeSlotsContainer.innerHTML = '<div class="col-span-full text-center text-red-600">Erro ao carregar horários. Tente novamente.</div>';
             }
         }
 
         async function getOccupiedSlots(date, barberName) {
+            if (!firebaseInitialized) {
+                console.log('⚠️ Firebase não disponível, assumindo todos horários livres');
+                return [];
+            }
+
             try {
                 const snapshot = await db.collection('appointments')
                     .where('date', '==', date)
@@ -830,11 +969,10 @@
                 
                 return snapshot.docs.map(doc => {
                     const data = doc.data();
-                    // Assumindo que pode ter campo 'time' ou extrair do horário
                     return data.time || ''; 
                 }).filter(time => time);
             } catch (error) {
-                console.error('Erro ao buscar horários ocupados:', error);
+                console.error('❌ Erro ao buscar horários ocupados:', error);
                 return [];
             }
         }
@@ -842,6 +980,28 @@
         function setupNavigation() {
             document.getElementById('nextBtn').addEventListener('click', nextStep);
             document.getElementById('prevBtn').addEventListener('click', prevStep);
+        }
+
+        function setupPhoneMasks() {
+            // Máscara para telefone premium
+            document.getElementById('premiumPhone').addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length <= 11) {
+                    value = value.replace(/^(\d{2})(\d)/g, '$1 $2');
+                    value = value.replace(/(\d)(\d{4})$/, '$1-$2');
+                }
+                e.target.value = value;
+            });
+
+            // Máscara para telefone do cliente
+            document.getElementById('clientPhone').addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length <= 11) {
+                    value = value.replace(/^(\d{2})(\d)/g, '$1 $2');
+                    value = value.replace(/(\d)(\d{4})$/, '$1-$2');
+                }
+                e.target.value = value;
+            });
         }
 
         function nextStep() {
@@ -904,14 +1064,14 @@
         }
 
         function returnToPlanSelection() {
+            console.log('🔄 Retornando à seleção de plano...');
+            
             document.querySelectorAll('[id$="Step"]').forEach(step => step.classList.add('hidden'));
             document.getElementById('summaryCard').classList.add('hidden');
-            const progressContainer = document.querySelector('.max-w-4xl.mx-auto.px-4.py-4');
-            if (progressContainer) {
-                progressContainer.classList.add('hidden');
-            }
+            document.getElementById('progressContainer').classList.add('hidden');
             document.getElementById('premiumVerification').classList.add('hidden');
             document.getElementById('premiumWelcome').classList.add('hidden');
+            document.getElementById('navigationButtons').style.display = 'none';
             
             currentStep = 0;
             selectedPlan = null;
@@ -930,12 +1090,15 @@
             document.getElementById('welcomeScreen').classList.remove('hidden');
             document.getElementById('prevBtn').classList.add('hidden');
             
+            // Limpar formulários
             document.getElementById('dateInput').value = '';
             document.getElementById('clientName').value = '';
             document.getElementById('clientPhone').value = '';
             document.getElementById('clientNotes').value = '';
             document.getElementById('premiumPhone').value = '';
             document.getElementById('premiumNotFound').classList.add('hidden');
+            
+            hideMessages();
         }
 
         function updateStepDisplay() {
@@ -988,6 +1151,8 @@
         }
 
         async function confirmAppointment() {
+            console.log('💾 Confirmando agendamento...');
+            
             let clientName, clientPhone, notes;
             
             if (isPremiumClient) {
@@ -1018,8 +1183,13 @@
             };
             
             try {
-                // Salvar na mesma coleção da ferramenta de gestão
-                await db.collection('appointments').add(appointmentData);
+                if (firebaseInitialized) {
+                    // Salvar na mesma coleção da ferramenta de gestão
+                    await db.collection('appointments').add(appointmentData);
+                    console.log('✅ Agendamento salvo no Firebase');
+                } else {
+                    console.log('⚠️ Firebase não disponível, simulando salvamento');
+                }
                 
                 // Mostrar modal de confirmação
                 document.getElementById('confirmService').textContent = appointmentData.service;
@@ -1030,9 +1200,11 @@
                 
                 document.getElementById('confirmModal').classList.remove('hidden');
                 
+                showSuccess('Agendamento confirmado com sucesso!');
+                
             } catch (error) {
-                console.error('Erro ao salvar agendamento:', error);
-                alert('Erro ao confirmar agendamento. Tente novamente.');
+                console.error('❌ Erro ao salvar agendamento:', error);
+                showError('Erro ao confirmar agendamento. Tente novamente.');
             }
         }
 
@@ -1041,15 +1213,33 @@
             location.reload();
         }
 
-        // Máscara para telefone
-        document.getElementById('clientPhone').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length <= 11) {
-                value = value.replace(/^(\d{2})(\d)/g, '$1 $2');
-                value = value.replace(/(\d)(\d{4})$/, '$1-$2');
-            }
-            e.target.value = value;
-        });
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMessage').classList.remove('hidden');
+            document.getElementById('successMessage').classList.add('hidden');
+            
+            setTimeout(() => {
+                document.getElementById('errorMessage').classList.add('hidden');
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            document.getElementById('successText').textContent = message;
+            document.getElementById('successMessage').classList.remove('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+            
+            setTimeout(() => {
+                document.getElementById('successMessage').classList.add('hidden');
+            }, 3000);
+        }
+
+        function hideMessages() {
+            document.getElementById('errorMessage').classList.add('hidden');
+            document.getElementById('successMessage').classList.add('hidden');
+        }
+
+        // Log de debug para verificar se o script está carregando
+        console.log('📱 App de Agendamento da Barbearia Pedro\'s carregado!');
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97971e6fa6324d42',t:'MTc1NjkyMjEzNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'979a0c42a7e96eae',t:'MTc1Njk1Mjg0OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
